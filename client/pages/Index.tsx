@@ -195,7 +195,7 @@ export default function Index() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a href={`mailto:${data.personalInfo.email}`}>
+              <a href={data.personalInfo.customEmailLink || `mailto:${data.personalInfo.email}`}>
                 <Button size="lg" className="bg-gradient-to-r from-portfolio-blue to-portfolio-purple hover:opacity-90">
                   <Mail className="mr-2 h-4 w-4" />
                   Send Email

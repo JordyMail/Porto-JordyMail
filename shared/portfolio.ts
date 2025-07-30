@@ -8,6 +8,8 @@ export interface PersonalInfo {
   location: string;
   summary: string;
   avatar?: string;
+  cvDownloadLink?: string;
+  customEmailLink?: string;
 }
 
 export interface Skill {
@@ -28,7 +30,7 @@ export interface Project {
   achievements: string[];
   link?: string;
   github?: string;
-  image?: string;
+  images?: string[]; // Support for multiple images (1-5)
   featured?: boolean;
 }
 
@@ -40,6 +42,7 @@ export interface Experience {
   description: string;
   responsibilities: string[];
   type: 'event' | 'organization' | 'work';
+  image?: string;
 }
 
 export interface Education {

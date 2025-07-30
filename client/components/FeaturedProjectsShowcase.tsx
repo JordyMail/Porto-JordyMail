@@ -102,7 +102,7 @@ export default function FeaturedProjectsShowcase() {
   );
 
   return (
-    <section className="py-20 relative">
+    <section id="projects" className="py-20 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center space-y-4 mb-12">
           <Badge variant="outline" className="text-portfolio-blue border-portfolio-blue/20">

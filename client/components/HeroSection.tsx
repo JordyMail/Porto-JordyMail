@@ -1,14 +1,34 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { usePortfolio } from '@/hooks/usePortfolio';
-import { Github, Linkedin, Mail, Phone, MapPin, Download, ChevronDown } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { Github, Linkedin, Mail, Phone, MapPin, Download, ChevronDown, Edit, Camera } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function HeroSection() {
-  const { data } = usePortfolio();
+  const { data, updateData } = usePortfolio();
+  const { isAuthenticated } = useAuth();
   const [displayText, setDisplayText] = useState('');
   const [textIndex, setTextIndex] = useState(0);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editData, setEditData] = useState({
+    avatar: data.personalInfo.avatar || '',
+    summary: data.personalInfo.summary,
+    cvDownloadLink: data.personalInfo.cvDownloadLink || '',
+    customEmailLink: data.personalInfo.customEmailLink || ''
+  });
+  
   const titles = ['Full-Stack Developer', 'IoT Specialist', 'Problem Solver', 'Tech Innovator'];
 
   // Typewriter effect
@@ -29,9 +49,42 @@ export default function HeroSection() {
     return () => clearInterval(timer);
   }, [textIndex]);
 
+  // Update editData when data changes
+  useEffect(() => {
+    setEditData({
+      avatar: data.personalInfo.avatar || '',
+      summary: data.personalInfo.summary,
+      cvDownloadLink: data.personalInfo.cvDownloadLink || '',
+      customEmailLink: data.personalInfo.customEmailLink || ''
+    });
+  }, [data.personalInfo.avatar, data.personalInfo.summary, data.personalInfo.cvDownloadLink, data.personalInfo.customEmailLink]);
+
   const scrollToProjects = () => {
     const projectsSection = document.getElementById('projects');
     projectsSection?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleSave = () => {
+    updateData({
+      personalInfo: {
+        ...data.personalInfo,
+        avatar: editData.avatar.trim() || undefined,
+        summary: editData.summary,
+        cvDownloadLink: editData.cvDownloadLink.trim() || undefined,
+        customEmailLink: editData.customEmailLink.trim() || undefined
+      }
+    });
+    setShowEditDialog(false);
+  };
+
+  const handleCancel = () => {
+    setEditData({
+      avatar: data.personalInfo.avatar || '',
+      summary: data.personalInfo.summary,
+      cvDownloadLink: data.personalInfo.cvDownloadLink || '',
+      customEmailLink: data.personalInfo.customEmailLink || ''
+    });
+    setShowEditDialog(false);
   };
 
   return (
@@ -60,9 +113,93 @@ export default function HeroSection() {
               </div>
             </div>
 
-            <p className="text-lg text-muted-foreground leading-relaxed max-w-2xl">
-              {data.personalInfo.summary}
-            </p>
+            {/* Editable Description */}
+            <div className="relative group">
+              <p className="text-lg text-muted-foreground leading-relaxed max-w-2xl">
+                {data.personalInfo.summary}
+              </p>
+              {isAuthenticated && (
+                <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+                  <DialogTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="absolute -right-8 top-0 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6"
+                    >
+                      <Edit className="h-3 w-3" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>Edit Profile Information</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="avatar">Profile Photo URL (optional)</Label>
+                        <Input
+                          id="avatar"
+                          value={editData.avatar}
+                          onChange={(e) => setEditData(prev => ({ ...prev, avatar: e.target.value }))}
+                          placeholder="https://example.com/profile-photo.jpg"
+                        />
+                        {editData.avatar && (
+                          <div className="mt-2">
+                            <img 
+                              src={editData.avatar} 
+                              alt="Profile preview" 
+                              className="w-20 h-20 object-cover rounded-full border"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="summary">About Me / Summary</Label>
+                        <Textarea
+                          id="summary"
+                          value={editData.summary}
+                          onChange={(e) => setEditData(prev => ({ ...prev, summary: e.target.value }))}
+                          placeholder="Write a brief summary about yourself..."
+                          rows={6}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="cvDownloadLink">CV Download Link (optional)</Label>
+                        <Input
+                          id="cvDownloadLink"
+                          value={editData.cvDownloadLink}
+                          onChange={(e) => setEditData(prev => ({ ...prev, cvDownloadLink: e.target.value }))}
+                          placeholder="https://drive.google.com/file/d/your-cv-id/view"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="customEmailLink">Custom Email Link (optional)</Label>
+                        <Input
+                          id="customEmailLink"
+                          value={editData.customEmailLink}
+                          onChange={(e) => setEditData(prev => ({ ...prev, customEmailLink: e.target.value }))}
+                          placeholder="mailto:your@email.com?subject=Hello&body=Hi there!"
+                        />
+                      </div>
+
+                      <div className="flex gap-3 pt-4">
+                        <Button onClick={handleSave} className="flex-1">
+                          Save Changes
+                        </Button>
+                        <Button variant="outline" onClick={handleCancel} className="flex-1">
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
+            </div>
 
             {/* Contact Info */}
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
@@ -82,19 +219,48 @@ export default function HeroSection() {
 
             {/* Action Buttons */}
             <div className="flex flex-wrap gap-4">
-              <Button 
-                size="lg" 
+              <Button
+                size="lg"
                 className="bg-gradient-to-r from-portfolio-blue to-portfolio-purple hover:opacity-90 transition-opacity"
                 onClick={scrollToProjects}
               >
                 View My Work
                 <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
-              
-              <Button variant="outline" size="lg" className="group">
-                <Download className="mr-2 h-4 w-4 group-hover:animate-bounce" />
-                Download CV
-              </Button>
+
+              <div className="relative group">
+                {data.personalInfo.cvDownloadLink ? (
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="group"
+                    asChild
+                  >
+                    <a href={data.personalInfo.cvDownloadLink} target="_blank" rel="noopener noreferrer">
+                      <Download className="mr-2 h-4 w-4 group-hover:animate-bounce" />
+                      Download CV
+                    </a>
+                  </Button>
+                ) : (
+                  <Button variant="outline" size="lg" className="group" disabled>
+                    <Download className="mr-2 h-4 w-4" />
+                    Download CV
+                  </Button>
+                )}
+                {isAuthenticated && (
+                  <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+                    <DialogTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6"
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                    </DialogTrigger>
+                  </Dialog>
+                )}
+              </div>
             </div>
 
             {/* Social Links */}
@@ -126,12 +292,47 @@ export default function HeroSection() {
 
           {/* Right Column - Visual Elements */}
           <div className="flex justify-center lg:justify-end animate-slide-up">
-            <div className="relative">
-              {/* Profile Image Placeholder */}
+            <div className="relative group">
+              {/* Profile Image */}
               <div className="w-80 h-80 rounded-2xl bg-gradient-to-br from-portfolio-blue/20 via-portfolio-purple/20 to-portfolio-cyan/20 flex items-center justify-center relative overflow-hidden">
-                <div className="w-72 h-72 rounded-xl bg-gradient-to-br from-portfolio-blue to-portfolio-purple flex items-center justify-center text-white text-6xl font-bold">
-                  JK
+                {data.personalInfo.avatar ? (
+                  <img 
+                    src={data.personalInfo.avatar} 
+                    alt={data.personalInfo.name}
+                    className="w-72 h-72 rounded-xl object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      // Show fallback
+                      const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                      if (fallback) {
+                        fallback.style.display = 'flex';
+                      }
+                    }}
+                  />
+                ) : null}
+                
+                {/* Fallback with initials */}
+                <div 
+                  className="w-72 h-72 rounded-xl bg-gradient-to-br from-portfolio-blue to-portfolio-purple flex items-center justify-center text-white text-6xl font-bold"
+                  style={{ display: data.personalInfo.avatar ? 'none' : 'flex' }}
+                >
+                  {data.personalInfo.name.split(' ').map(n => n[0]).join('')}
                 </div>
+                
+                {/* Edit button for photo */}
+                {isAuthenticated && (
+                  <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+                    <DialogTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="secondary"
+                        className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Camera className="h-4 w-4" />
+                      </Button>
+                    </DialogTrigger>
+                  </Dialog>
+                )}
                 
                 {/* Floating elements */}
                 <div className="absolute -top-4 -right-4 w-8 h-8 bg-portfolio-orange rounded-full animate-float" />

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { usePortfolio } from '@/hooks/usePortfolio';
+import { useAuth } from '@/hooks/useAuth';
 import Navigation from '@/components/Navigation';
 import ParticleBackground from '@/components/ParticleBackground';
 import { Button } from '@/components/ui/button';
@@ -10,19 +11,27 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/components/ui/use-toast';
-import { 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Github, 
-  Linkedin, 
-  Send, 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  Mail,
+  Phone,
+  MapPin,
+  Github,
+  Linkedin,
+  Send,
   MessageSquare,
   Clock,
   Calendar,
   Download,
   ExternalLink,
-  Globe
+  Globe,
+  Edit
 } from 'lucide-react';
 
 interface ContactForm {
@@ -34,7 +43,8 @@ interface ContactForm {
 }
 
 export default function ContactPage() {
-  const { data } = usePortfolio();
+  const { data, updateData } = usePortfolio();
+  const { isAuthenticated } = useAuth();
   const [formData, setFormData] = useState<ContactForm>({
     name: '',
     email: '',
@@ -43,32 +53,74 @@ export default function ContactPage() {
     type: 'general'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showCvEditDialog, setShowCvEditDialog] = useState(false);
+  const [cvLink, setCvLink] = useState(data.personalInfo.cvDownloadLink || '');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    // Simulate form submission
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    toast({
-      title: "Message sent!",
-      description: "Thank you for reaching out. I'll get back to you soon!",
-    });
-    
-    setFormData({
-      name: '',
-      email: '',
-      subject: '',
-      message: '',
-      type: 'general'
-    });
-    
+
+    try {
+      // Create mailto link with form data
+      const emailBody = `
+Name: ${formData.name}
+Email: ${formData.email}
+Type: ${formData.type}
+Subject: ${formData.subject}
+
+Message:
+${formData.message}
+      `.trim();
+
+      const mailtoLink = `mailto:${data.personalInfo.email}?subject=${encodeURIComponent(formData.subject)}&body=${encodeURIComponent(emailBody)}`;
+
+      // Open email client
+      window.location.href = mailtoLink;
+
+      toast({
+        title: "Email client opened!",
+        description: "Your email client should open with the pre-filled message. Please send it from there.",
+      });
+
+      // Clear form after a short delay
+      setTimeout(() => {
+        setFormData({
+          name: '',
+          email: '',
+          subject: '',
+          message: '',
+          type: 'general'
+        });
+      }, 1000);
+
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to open email client. Please try sending an email manually.",
+        variant: "destructive",
+      });
+    }
+
     setIsSubmitting(false);
   };
 
   const handleInputChange = (field: keyof ContactForm, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSaveCvLink = () => {
+    updateData({
+      personalInfo: {
+        ...data.personalInfo,
+        cvDownloadLink: cvLink.trim() || undefined
+      }
+    });
+    setShowCvEditDialog(false);
+  };
+
+  const handleCancelCvEdit = () => {
+    setCvLink(data.personalInfo.cvDownloadLink || '');
+    setShowCvEditDialog(false);
   };
 
   const contactMethods = [
@@ -318,7 +370,7 @@ export default function ContactPage() {
               </Card>
 
               {/* Download CV */}
-              <Card className="bg-gradient-to-br from-portfolio-blue/5 to-portfolio-purple/5 border-portfolio-blue/20">
+              <Card className="bg-gradient-to-br from-portfolio-blue/5 to-portfolio-purple/5 border-portfolio-blue/20 relative group">
                 <CardContent className="pt-6 text-center">
                   <div className="w-12 h-12 bg-portfolio-blue/10 rounded-lg flex items-center justify-center mx-auto mb-3">
                     <Download className="h-6 w-6 text-portfolio-blue" />
@@ -327,13 +379,65 @@ export default function ContactPage() {
                   <p className="text-sm text-muted-foreground mb-4">
                     Get the complete overview of my experience and skills
                   </p>
-                  <Button 
-                    variant="outline" 
-                    className="w-full border-portfolio-blue text-portfolio-blue hover:bg-portfolio-blue hover:text-white"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Download CV
-                  </Button>
+                  {data.personalInfo.cvDownloadLink ? (
+                    <Button
+                      variant="outline"
+                      className="w-full border-portfolio-blue text-portfolio-blue hover:bg-portfolio-blue hover:text-white"
+                      asChild
+                    >
+                      <a href={data.personalInfo.cvDownloadLink} target="_blank" rel="noopener noreferrer">
+                        <Download className="h-4 w-4 mr-2" />
+                        Download CV
+                      </a>
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      className="w-full border-portfolio-blue text-portfolio-blue opacity-50"
+                      disabled
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      CV Link Not Set
+                    </Button>
+                  )}
+
+                  {isAuthenticated && (
+                    <Dialog open={showCvEditDialog} onOpenChange={setShowCvEditDialog}>
+                      <DialogTrigger asChild>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6"
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Edit CV Download Link</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="cv-link">CV Download URL</Label>
+                            <Input
+                              id="cv-link"
+                              value={cvLink}
+                              onChange={(e) => setCvLink(e.target.value)}
+                              placeholder="https://drive.google.com/file/d/your-cv-id/view"
+                            />
+                          </div>
+                          <div className="flex gap-3 pt-4">
+                            <Button onClick={handleSaveCvLink} className="flex-1">
+                              Save
+                            </Button>
+                            <Button variant="outline" onClick={handleCancelCvEdit} className="flex-1">
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  )}
                 </CardContent>
               </Card>
 

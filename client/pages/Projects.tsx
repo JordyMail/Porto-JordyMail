@@ -17,8 +17,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Plus, Filter, Search } from 'lucide-react';
+import { Plus, Filter, Search, Trash2 } from 'lucide-react';
 import { Project } from '@shared/portfolio';
+import ProjectImageCarousel from '@/components/ProjectImageCarousel';
 
 export default function Projects() {
   const { data, addProject } = usePortfolio();
@@ -34,6 +35,7 @@ export default function Projects() {
     description: '',
     technologies: [''],
     achievements: [''],
+    images: [],
     featured: false
   });
 
@@ -84,7 +86,8 @@ export default function Projects() {
       addProject({
         ...newProject,
         technologies: newProject.technologies.filter(tech => tech.trim() !== ''),
-        achievements: newProject.achievements.filter(ach => ach.trim() !== '')
+        achievements: newProject.achievements.filter(ach => ach.trim() !== ''),
+        images: (newProject.images || []).filter(img => img.trim() !== '')
       });
       setNewProject({
         title: '',
@@ -94,6 +97,7 @@ export default function Projects() {
         description: '',
         technologies: [''],
         achievements: [''],
+        images: [],
         featured: false
       });
       setShowAddDialog(false);
@@ -125,6 +129,29 @@ export default function Projects() {
     setNewProject(prev => ({
       ...prev,
       achievements: prev.achievements.map((ach, i) => i === index ? value : ach)
+    }));
+  };
+
+  const addImage = () => {
+    if ((newProject.images || []).length < 5) {
+      setNewProject(prev => ({
+        ...prev,
+        images: [...(prev.images || []), '']
+      }));
+    }
+  };
+
+  const updateImage = (index: number, value: string) => {
+    setNewProject(prev => ({
+      ...prev,
+      images: (prev.images || []).map((img, i) => i === index ? value : img)
+    }));
+  };
+
+  const removeImage = (index: number) => {
+    setNewProject(prev => ({
+      ...prev,
+      images: (prev.images || []).filter((_, i) => i !== index)
     }));
   };
 
@@ -234,6 +261,46 @@ export default function Projects() {
                         onCheckedChange={(checked) => setNewProject(prev => ({ ...prev, featured: checked }))}
                       />
                       <Label htmlFor="new-featured">Featured Project</Label>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label>Project Images (optional, max 5)</Label>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={addImage}
+                          disabled={(newProject.images || []).length >= 5}
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add Image
+                        </Button>
+                      </div>
+                      <div className="space-y-2">
+                        {(newProject.images || []).map((image, index) => (
+                          <div key={index} className="flex gap-2">
+                            <Input
+                              value={image}
+                              onChange={(e) => updateImage(index, e.target.value)}
+                              placeholder="https://example.com/image.jpg"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => removeImage(index)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                      {newProject.images && newProject.images.length > 0 && (
+                        <div className="mt-2">
+                          <ProjectImageCarousel images={newProject.images} title={newProject.title || "Project Preview"} />
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-2">

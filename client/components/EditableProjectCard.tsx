@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { usePortfolio } from '@/hooks/usePortfolio';
 import { useAuth } from '@/hooks/useAuth';
 import { Project } from '@shared/portfolio';
+import ProjectImageCarousel from '@/components/ProjectImageCarousel';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -91,6 +92,27 @@ export default function EditableProjectCard({ project }: EditableProjectCardProp
     }));
   };
 
+  const addImage = () => {
+    setEditData(prev => ({
+      ...prev,
+      images: [...(prev.images || []), '']
+    }));
+  };
+
+  const updateImage = (index: number, value: string) => {
+    setEditData(prev => ({
+      ...prev,
+      images: (prev.images || []).map((img, i) => i === index ? value : img)
+    }));
+  };
+
+  const removeImage = (index: number) => {
+    setEditData(prev => ({
+      ...prev,
+      images: (prev.images || []).filter((_, i) => i !== index)
+    }));
+  };
+
   if (isEditing) {
     return (
       <Dialog open={isEditing} onOpenChange={setIsEditing}>
@@ -166,6 +188,40 @@ export default function EditableProjectCard({ project }: EditableProjectCardProp
                   placeholder="https://github.com/..."
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Project Images (optional, max 5)</Label>
+                <Button type="button" size="sm" variant="outline" onClick={addImage}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Image
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {(editData.images || []).map((image, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      value={image}
+                      onChange={(e) => updateImage(index, e.target.value)}
+                      placeholder="https://example.com/image.jpg"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeImage(index)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              {editData.images && editData.images.length > 0 && (
+                <div className="mt-2">
+                  <ProjectImageCarousel images={editData.images} title={editData.title} />
+                </div>
+              )}
             </div>
 
             <div className="flex items-center space-x-2">
@@ -334,6 +390,11 @@ export default function EditableProjectCard({ project }: EditableProjectCardProp
       </CardHeader>
 
       <CardContent className="space-y-4">
+        {/* Project Images */}
+        {project.images && project.images.length > 0 && (
+          <ProjectImageCarousel images={project.images} title={project.title} />
+        )}
+
         <p className="text-muted-foreground leading-relaxed">
           {project.description}
         </p>

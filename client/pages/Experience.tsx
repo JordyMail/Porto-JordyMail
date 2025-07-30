@@ -267,6 +267,28 @@ export default function ExperiencePage() {
                     </div>
 
                     <div className="space-y-2">
+                      <Label htmlFor="new-image">Experience Image (optional)</Label>
+                      <Input
+                        id="new-image"
+                        value={newExperience.image || ''}
+                        onChange={(e) => setNewExperience(prev => ({ ...prev, image: e.target.value }))}
+                        placeholder="https://example.com/image.jpg"
+                      />
+                      {newExperience.image && (
+                        <div className="mt-2">
+                          <img
+                            src={newExperience.image}
+                            alt="Experience preview"
+                            className="w-full h-32 object-cover rounded-md border"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <Label>Responsibilities</Label>
                         <Button type="button" size="sm" variant="outline" onClick={() => addResponsibility(true)}>
@@ -376,23 +398,42 @@ export default function ExperiencePage() {
                         )}
                       </div>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                      <p className="text-muted-foreground leading-relaxed">
-                        {experience.description}
-                      </p>
-                      {experience.responsibilities.length > 0 && (
-                        <div className="space-y-2">
-                          <h4 className="text-sm font-semibold">Key Responsibilities:</h4>
-                          <ul className="space-y-1">
-                            {experience.responsibilities.map((resp, idx) => (
-                              <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
-                                <div className={`w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0 ${typeColors[experience.type]}`} />
-                                {resp}
-                              </li>
-                            ))}
-                          </ul>
+                    <CardContent className="p-6 pt-0 pr-0">
+                      <div className="flex gap-4">
+                        {/* Text Content */}
+                        <div className="flex-1 space-y-4 pr-4">
+                          <p className="text-muted-foreground leading-relaxed">
+                            {experience.description}
+                          </p>
+                          {experience.responsibilities.length > 0 && (
+                            <div className="space-y-2">
+                              <h4 className="text-sm font-semibold">Key Responsibilities:</h4>
+                              <ul className="space-y-1">
+                                {experience.responsibilities.map((resp, idx) => (
+                                  <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
+                                    <div className={`w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0 ${typeColors[experience.type]}`} />
+                                    {resp}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
                         </div>
-                      )}
+
+                        {/* Experience Image - Right Side 1:1 Aspect Ratio */}
+                        {experience.image && (
+                          <div className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden">
+                            <img
+                              src={experience.image}
+                              alt={experience.title}
+                              className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
                 </div>
@@ -538,6 +579,27 @@ export default function ExperiencePage() {
                   onChange={(e) => setEditingExp(prev => prev ? ({ ...prev, description: e.target.value }) : null)}
                   rows={3}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Experience Image (optional)</Label>
+                <Input
+                  value={editingExp.image || ''}
+                  onChange={(e) => setEditingExp(prev => prev ? ({ ...prev, image: e.target.value }) : null)}
+                  placeholder="https://example.com/image.jpg"
+                />
+                {editingExp.image && (
+                  <div className="mt-2">
+                    <img
+                      src={editingExp.image}
+                      alt="Experience preview"
+                      className="w-full h-32 object-cover rounded-md border"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
